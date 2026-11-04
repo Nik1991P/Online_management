@@ -29,17 +29,25 @@
 
         <!-- Preklopnik Uloga -->
         <div class="bg-slate-100 p-1.5 rounded-xl flex flex-wrap gap-1 border border-slate-200/60">
-          <button onclick="setRole('input')" id="roleBtn-input" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+          <button onclick="setRole('input')" id="roleBtn-input" class="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            Unos Bookinga
+            Unos
           </button>
           <button onclick="setRole('dispatch')" id="roleBtn-dispatch" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
             <i data-lucide="user-check" class="w-4 h-4"></i>
-            Dodjela Vozača
+            Dispečer
           </button>
           <button onclick="setRole('driver')" id="roleBtn-driver" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
             <i data-lucide="eye" class="w-4 h-4"></i>
-            Pogled za Vozače
+            Vozač
+          </button>
+          <button onclick="setRole('all')" id="roleBtn-all" class="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="shield" class="w-4 h-4"></i>
+            Sve
+          </button>
+          <button onclick="setRole('view')" id="roleBtn-view" class="px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="list" class="w-4 h-4"></i>
+            Pregled
           </button>
         </div>
       </div>
@@ -68,8 +76,13 @@
           </h2>
           <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
             <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura (24h)</label>
               <input type="time" id="time" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Mjesto Pick-up</label>
+              <input type="text" id="pickup" required placeholder="npr. Hotel Park / Glavni trg" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
             <div>
@@ -157,13 +170,15 @@
     function setRole(role) {
       currentRole = role;
       
-      const roles = ['input', 'dispatch', 'driver'];
+      const roles = ['input', 'dispatch', 'driver', 'all', 'view'];
       roles.forEach(r => {
         const btn = document.getElementById(`roleBtn-${r}`);
-        if(r === role) {
-          btn.className = "px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm bg-indigo-600 text-white";
-        } else {
-          btn.className = "px-3.5 py-2 rounded-lg text-xs font-medium transition-all text-slate-600 hover:bg-white hover:shadow-xs";
+        if(btn) {
+          if(r === role) {
+            btn.className = "px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm bg-indigo-600 text-white";
+          } else {
+            btn.className = "px-3.5 py-2 rounded-lg text-xs font-medium transition-all text-slate-600 hover:bg-white hover:shadow-xs";
+          }
         }
       });
 
@@ -171,11 +186,8 @@
       const leftCol = document.getElementById('leftColumn');
       const rightCol = document.getElementById('rightColumn');
 
-      if (role === 'driver') {
-        inputFormCard.classList.add('hidden');
-        leftCol.className = "lg:col-span-3 space-y-6";
-        rightCol.className = "lg:col-span-9";
-      } else if (role === 'dispatch') {
+      // Ako je uloga samo pregled ili vozač, sakrij formu za unos
+      if (role === 'driver' || role === 'dispatch' || role === 'view') {
         inputFormCard.classList.add('hidden');
         leftCol.className = "lg:col-span-3 space-y-6";
         rightCol.className = "lg:col-span-9";
@@ -211,12 +223,14 @@
       e.preventDefault();
       
       const time = document.getElementById('time').value;
+      const pickup = document.getElementById('pickup').value;
       const vehicleType = document.getElementById('vehicleType').value;
       const pax = document.getElementById('pax').value;
       const phone = document.getElementById('phone').value;
 
       const newBooking = {
         time,
+        pickup,
         vehicleType,
         pax,
         phone,
@@ -289,7 +303,8 @@
         card.className = "p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 transition-all shadow-xs";
 
         let driverSection = '';
-        if (currentRole === 'dispatch') {
+        // Uloge "dispatch" i "all" mogu mijenjati vozača
+        if (currentRole === 'dispatch' || currentRole === 'all') {
           driverSection = `
             <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
               <label class="text-xs font-semibold text-slate-500 flex items-center gap-1">
@@ -314,7 +329,8 @@
         }
 
         let deleteBtn = '';
-        if (currentRole === 'input') {
+        // Uloge "input" i "all" mogu brisati booking
+        if (currentRole === 'input' || currentRole === 'all') {
           deleteBtn = `
             <button onclick="deleteBooking('${b.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded-lg transition-colors" title="Obriši">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -337,6 +353,11 @@
               </div>
             </div>
             ${deleteBtn}
+          </div>
+
+          <div class="mt-2 text-xs font-medium text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i>
+            <span>Pick-up: <strong>${b.pickup || 'Nije navedeno'}</strong></span>
           </div>
 
           <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
