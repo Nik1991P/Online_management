@@ -8,6 +8,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Firebase SDKs (Realtime Database) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
@@ -70,4 +74,290 @@
 
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
-              <select id="vehicleType" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo
+              <select id="vehicleType" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="Cabrio Bus">Cabrio Bus</option>
+                <option value="Tuk Tuk">Tuk Tuk</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Broj osoba</label>
+                <input type="number" id="pax" min="1" max="100" required placeholder="npr. 4" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Broj telefona</label>
+                <input type="tel" id="phone" required placeholder="+385 91..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+              <i data-lucide="plus" class="w-5 h-5"></i>
+              Spremi Booking
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Desna Lista Bookinga -->
+      <div id="rightColumn" class="lg:col-span-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+            <div>
+              <h2 id="displayDateTitle" class="text-lg font-bold text-slate-900">Raspored Tura</h2>
+              <p class="text-xs text-slate-500">Bookinzi sortirani kronološki po vremenu</p>
+            </div>
+            
+            <span id="bookingCount" class="self-start sm:self-auto bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">
+              0 vožnji
+            </span>
+          </div>
+
+          <!-- Prikaz Liste -->
+          <div id="bookingsList" class="space-y-3.5">
+            <!-- Dinamički sadržaj -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // 1. Firebase Konfiguracija
+    const firebaseConfig = {
+      apiKey: "AIzaSyDECTTtb5SYZJ_xUJWB1ySi2NxBXZoV13w",
+      authDomain: "online-management-1315c.firebaseapp.com",
+      databaseURL: "https://online-management-1315c-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "online-management-1315c",
+      storageBucket: "online-management-1315c.firebasestorage.app",
+      messagingSenderId: "243674230357",
+      appId: "1:243674230357:web:93b0ed58009575ef0a2edc",
+      measurementId: "G-VWBNBQGSH4"
+    };
+
+    // Inicijalizacija Firebase-a
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Stanje Aplikacije
+    let currentRole = 'input'; 
+    let activeDate = new Date().toISOString().split('T')[0];
+    let bookingsData = {};
+
+    // Inicijalno učitavanje
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('filterDate').value = activeDate;
+      setRole('input');
+      listenToFirebase();
+    });
+
+    // Postavljanje Uloge
+    function setRole(role) {
+      currentRole = role;
+      
+      const roles = ['input', 'dispatch', 'driver'];
+      roles.forEach(r => {
+        const btn = document.getElementById(`roleBtn-${r}`);
+        if(r === role) {
+          btn.className = "px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm bg-indigo-600 text-white";
+        } else {
+          btn.className = "px-3.5 py-2 rounded-lg text-xs font-medium transition-all text-slate-600 hover:bg-white hover:shadow-xs";
+        }
+      });
+
+      const inputFormCard = document.getElementById('inputFormCard');
+      const leftCol = document.getElementById('leftColumn');
+      const rightCol = document.getElementById('rightColumn');
+
+      if (role === 'driver') {
+        inputFormCard.classList.add('hidden');
+        leftCol.className = "lg:col-span-3 space-y-6";
+        rightCol.className = "lg:col-span-9";
+      } else if (role === 'dispatch') {
+        inputFormCard.classList.add('hidden');
+        leftCol.className = "lg:col-span-3 space-y-6";
+        rightCol.className = "lg:col-span-9";
+      } else {
+        inputFormCard.classList.remove('hidden');
+        leftCol.className = "lg:col-span-4 space-y-6";
+        rightCol.className = "lg:col-span-8";
+      }
+
+      renderBookings();
+    }
+
+    // Slušanje Firebase promjena u stvarnom vremenu
+    function listenToFirebase() {
+      const selectedDate = document.getElementById('filterDate').value;
+      const ref = db.ref('bookings/' + selectedDate);
+      
+      ref.on('value', (snapshot) => {
+        bookingsData = snapshot.val() || {};
+        renderBookings();
+      });
+    }
+
+    function loadBookings() {
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref('bookings/' + activeDate).off();
+      activeDate = selectedDate;
+      listenToFirebase();
+    }
+
+    // Dodavanje Bookinga u Firebase
+    function handleCreateBooking(e) {
+      e.preventDefault();
+      
+      const time = document.getElementById('time').value;
+      const vehicleType = document.getElementById('vehicleType').value;
+      const pax = document.getElementById('pax').value;
+      const phone = document.getElementById('phone').value;
+
+      const newBooking = {
+        time,
+        vehicleType,
+        pax,
+        phone,
+        driver: '',
+        createdAt: Date.now()
+      };
+
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref('bookings/' + selectedDate).push(newBooking, (err) => {
+        if (!err) {
+          document.getElementById('bookingForm').reset();
+        } else {
+          alert("Greška pri spremanju: " + err.message);
+        }
+      });
+    }
+
+    // Ažuriranje Vozača
+    function updateDriver(id, driverName) {
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref(`bookings/${selectedDate}/${id}`).update({ driver: driverName });
+    }
+
+    // Brisanje Bookinga
+    function deleteBooking(id) {
+      if (confirm('Jeste li sigurni da želite obrisati ovaj booking?')) {
+        const selectedDate = document.getElementById('filterDate').value;
+        db.ref(`bookings/${selectedDate}/${id}`).remove();
+      }
+    }
+
+    // Prikaz (Render) Liste
+    function renderBookings() {
+      const listContainer = document.getElementById('bookingsList');
+      const countBadge = document.getElementById('bookingCount');
+      const displayTitle = document.getElementById('displayDateTitle');
+      
+      const formattedDate = new Date(activeDate).toLocaleDateString('hr-HR', { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'numeric', 
+        year: 'numeric' 
+      });
+      displayTitle.textContent = `Raspored (${formattedDate})`;
+
+      const bookingsArray = Object.keys(bookingsData).map(key => ({
+        id: key,
+        ...bookingsData[key]
+      }));
+
+      bookingsArray.sort((a, b) => a.time.localeCompare(b.time));
+
+      countBadge.textContent = `${bookingsArray.length} vožnji`;
+      listContainer.innerHTML = '';
+
+      if (bookingsArray.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+            <i data-lucide="calendar-x" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+            <p class="text-sm font-medium text-slate-500">Nema online bookinga za ovaj datum.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      bookingsArray.forEach(b => {
+        const isBus = b.vehicleType === 'Cabrio Bus';
+        const card = document.createElement('div');
+        card.className = "p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 transition-all shadow-xs";
+
+        let driverSection = '';
+        if (currentRole === 'dispatch') {
+          driverSection = `
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <label class="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                <i data-lucide="user-check" class="w-3.5 h-3.5 text-indigo-500"></i> Vozač:
+              </label>
+              <input type="text" 
+                     placeholder="Unesi vozača..." 
+                     value="${b.driver || ''}" 
+                     onchange="updateDriver('${b.id}', this.value)"
+                     class="text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none w-44">
+            </div>
+          `;
+        } else {
+          driverSection = `
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-medium text-slate-500">Vozač:</span>
+              <span class="text-xs font-bold ${b.driver ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} px-2.5 py-1 rounded-md">
+                ${b.driver ? b.driver : 'Nije dodijeljen'}
+              </span>
+            </div>
+          `;
+        }
+
+        let deleteBtn = '';
+        if (currentRole === 'input') {
+          deleteBtn = `
+            <button onclick="deleteBooking('${b.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded-lg transition-colors" title="Obriši">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 border border-indigo-100">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+                ${b.time}
+              </div>
+              <div>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${isBus ? 'bg-sky-50 text-sky-700 border border-sky-100' : 'bg-purple-50 text-purple-700 border border-purple-100'}">
+                  ${isBus ? '<i data-lucide="bus" class="w-3 h-3"></i>' : '<i data-lucide="car" class="w-3 h-3"></i>'}
+                  ${b.vehicleType}
+                </span>
+              </div>
+            </div>
+            ${deleteBtn}
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center gap-1.5 text-slate-600">
+              <i data-lucide="users" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Putnika: <strong class="text-slate-800">${b.pax}</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-slate-600">
+              <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
+              <a href="tel:${b.phone}" class="hover:underline text-indigo-600 font-medium">${b.phone}</a>
+            </div>
+          </div>
+
+          ${driverSection}
+        `;
+
+        listContainer.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
