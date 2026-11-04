@@ -1,118 +1,101 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tour Booking Manager</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#075985',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upravljanje Bookingom Tura</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-    <!-- Navigation / Role Switcher -->
-    <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-3">
-                    <span class="text-2xl">🚐</span>
-                    <h1 class="text-xl font-bold text-gray-900">Upravljanje Turalima</h1>
-                </div>
-                
-                <!-- Role Selector Buttons -->
-                <div class="flex space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-lg border border-gray-200">
-                    <button id="btnRoleInput" onclick="setRole('input')" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors duration-150">
-                        ✍️ Unos Bookinga
-                    </button>
-                    <button id="btnRoleDispatch" onclick="setRole('dispatch')" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors duration-150">
-                        📋 Dispečer
-                    </button>
-                    <button id="btnRoleDriver" onclick="setRole('driver')" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors duration-150">
-                        🚘 Vozač (Pregled)
-                    </button>
-                </div>
-            </div>
+  <div class="max-w-6xl mx-auto p-4 sm:p-6">
+    <!-- Header & Uloge -->
+    <header class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <i data-lucide="bus" class="w-7 h-7 text-indigo-600"></i>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Booking Tura</h1>
+          </div>
+          <p class="text-sm text-slate-500 mt-0.5">Online evidencija i dodjela vozača</p>
         </div>
-    </nav>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Preklopnik Uloga -->
+        <div class="bg-slate-100 p-1.5 rounded-xl flex flex-wrap gap-1 border border-slate-200/60">
+          <button onclick="setRole('input')" id="roleBtn-input" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            Unos Bookinga
+          </button>
+          <button onclick="setRole('dispatch')" id="roleBtn-dispatch" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            Dodjela Vozača
+          </button>
+          <button onclick="setRole('driver')" id="roleBtn-driver" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+            Pogled za Vozače
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Glavni Sadržaj -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Lijeve Kontrole (Forma + Odabir Datuma) -->
+      <div id="leftColumn" class="lg:col-span-4 space-y-6">
         
-        <!-- Top Controls: Date Filter -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center space-x-3 w-full sm:w-auto">
-                <label for="filterDate" class="text-sm font-semibold text-gray-700 whitespace-nowrap">Odaberi Datum:</label>
-                <input type="date" id="filterDate" onchange="changeDate()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none w-full sm:w-auto">
-            </div>
-            
-            <div id="roleBadge" class="text-xs px-3 py-1 rounded-full font-semibold bg-blue-100 text-blue-800">
-                Aktivna Uloga: Unos Bookinga
-            </div>
+        <!-- Filter po datumu -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <label for="filterDate" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-4 h-4 text-indigo-500"></i> Odaberite Datum
+          </label>
+          <input type="date" id="filterDate" onchange="changeDate()" 
+                 class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium">
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- SECTION 1: Booking Form (Visible to 'input' role) -->
-            <div id="sectionForm" class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-24">
-                    <h2 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2 flex items-center gap-2">
-                        <span>➕</span> Novi Booking
-                    </h2>
-                    
-                    <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Vrijeme Vožnje</label>
-                            <input type="time" id="time" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Vrsta Vozila</label>
-                            <select id="vehicleType" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none bg-white">
-                                <option value="Cabrio Bus">Cabrio Bus</option>
-                                <option value="Tuk Tuk">Tuk Tuk</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Broj Putnika (Pax)</label>
-                            <input type="number" id="pax" min="1" required placeholder="Npr. 4" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Kontakt Telefon</label>
-                            <input type="tel" id="phone" required placeholder="+385 91 123 4567" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        </div>
-
-                        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200 shadow">
-                            Spremi Booking
-                        </button>
-                    </form>
-                </div>
+        <!-- Forma za unos novog bookinga -->
+        <div id="inputFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 pb-3 border-b border-slate-100">
+            <i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i>
+            Novi Booking
+          </h2>
+          <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
+              <input type="time" id="time" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
-            <!-- SECTION 2: Bookings List (Visible to all) -->
-            <div id="sectionList" class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <span>📅</span> Lista Vožnji za <span id="displayDate" class="text-brand-600">--</span>
-                        </h2>
-                        <span id="bookingCount" class="bg-gray-100 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200">
-                            0 vožnji
-                        </span>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
+              <select id="vehicleType" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="Cabrio Bus">Cabrio Bus</option>
+                <option value="Tuk Tuk">Tuk Tuk</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Broj osoba</label>
+                <input type="number" id="pax" min="1" max="100" required placeholder="npr. 4" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Broj telefona</label>
+                <input type="tel" id="phone" required placeholder="+385 91..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              </div>
+            </div>
+
+            <button type="submit" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+              <i data-lucide="plus" class="w-5 h-5"></i>
+              Spremi Booking
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Desna Lista Bookinga -->
+      <div id="rightColumn" class="lg:col-span-8">
+        <div class="bg-white rounded-2xl shadow
