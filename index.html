@@ -52,7 +52,7 @@
           <label for="filterDate" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <i data-lucide="calendar" class="w-4 h-4 text-indigo-500"></i> Odaberite Datum
           </label>
-          <input type="date" id="filterDate" onchange="changeDate()" 
+          <input type="date" id="filterDate" onchange="loadBookings()" 
                  class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium">
         </div>
 
@@ -70,32 +70,4 @@
 
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
-              <select id="vehicleType" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-                <option value="Cabrio Bus">Cabrio Bus</option>
-                <option value="Tuk Tuk">Tuk Tuk</option>
-              </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Broj osoba</label>
-                <input type="number" id="pax" min="1" max="100" required placeholder="npr. 4" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Broj telefona</label>
-                <input type="tel" id="phone" required placeholder="+385 91..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-              </div>
-            </div>
-
-            <button type="submit" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
-              <i data-lucide="plus" class="w-5 h-5"></i>
-              Spremi Booking
-            </button>
-          </form>
-        </div>
-
-      </div>
-
-      <!-- Desna Lista Bookinga -->
-      <div id="rightColumn" class="lg:col-span-8">
-        <div class="bg-white rounded-2xl shadow
+              <select id="vehicleType" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo
