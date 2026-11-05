@@ -254,4 +254,463 @@
 
     let currentRole = null; 
     let activeDate = new Date().toISOString().split('T')[0];
-    let bookingsData =
+    let bookingsData = {};
+    let driversList = [];
+    let editingBookingId = null; 
+    let driverAddingNoteId = null; 
+
+    window.formatTimeInput = function(input) {
+      let val = input.value.replace(/\D/g, '');
+      if (val.length >= 3) {
+        input.value = val.substring(0, 2) + ':' + val.substring(2, 4);
+      } else {
+        input.value = val;
+      }
+    };
+
+    window.openBookingModal = function() {
+      document.getElementById('bookingModal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    };
+
+    window.closeBookingModal = function() {
+      document.getElementById('bookingModal').classList.add('hidden');
+    };
+
+    window.openDriversModal = function() {
+      document.getElementById('driversModal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    };
+
+    window.closeDriversModal = function() {
+      document.getElementById('driversModal').classList.add('hidden');
+    };
+
+    window.handleLogin = function(e) {
+      if (e) e.preventDefault();
+      const passInput = document.getElementById('loginPassword');
+      const pass = passInput.value.trim();
+      const errorEl = document.getElementById('loginError');
+
+      if (PASSWORDS[pass]) {
+        const role = PASSWORDS[pass];
+        localStorage.setItem('tour_app_role', role);
+        errorEl.classList.add('hidden');
+        passInput.value = '';
+        activeDate = new Date().toISOString().split('T')[0];
+        initApp(role);
+      } else {
+        errorEl.classList.remove('hidden');
+        passInput.value = '';
+      }
+    };
+
+    window.handleLogout = function() {
+      localStorage.removeItem('tour_app_role');
+      currentRole = null;
+      document.getElementById('appScreen').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+    };
+
+    function initApp(role) {
+      currentRole = role;
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+      document.getElementById('filterDate').value = activeDate;
+
+      const badge = document.getElementById('userRoleBadge');
+      const openBookingBtn = document.getElementById('openBookingModalBtn');
+      const openDriversBtn = document.getElementById('openDriversModalBtn');
+
+      if (role === 'admin') {
+        badge.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Admin`;
+        badge.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 flex items-center gap-1.5";
+        openBookingBtn.classList.remove('hidden');
+        openDriversBtn.classList.remove('hidden');
+      } else {
+        badge.innerHTML = `<i data-lucide="user" class="w-4 h-4 text-indigo-600"></i> Vozač`;
+        badge.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1.5";
+        openBookingBtn.classList.add('hidden');
+        openDriversBtn.classList.add('hidden');
+      }
+
+      if (window.lucide) lucide.createIcons();
+      listenToFirebase();
+      listenToDrivers();
+    }
+
+    function listenToFirebase() {
+      const selectedDate = document.getElementById('filterDate').value;
+      const ref = db.ref('bookings/' + selectedDate);
+      
+      ref.on('value', (snapshot) => {
+        bookingsData = snapshot.val() || {};
+        renderBookings();
+      });
+    }
+
+    function listenToDrivers() {
+      db.ref('drivers').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        driversList = Object.keys(data).map(key => ({
+          id: key,
+          name: data[key].name
+        }));
+        renderDriversManagement();
+        renderBookings();
+      });
+    }
+
+    window.handleAddDriver = function(e) {
+      e.preventDefault();
+      const input = document.getElementById('newDriverName');
+      const name = input.value.trim();
+      if (!name) return;
+
+      db.ref('drivers').push({ name }, (err) => {
+        if (!err) {
+          input.value = '';
+        } else {
+          alert("Greška pri dodavanju vozača: " + err.message);
+        }
+      });
+    };
+
+    window.deleteDriver = function(id) {
+      if (confirm('Jeste li sigurni da želite obrisati ovog vozača iz liste?')) {
+        db.ref(`drivers/${id}`).remove();
+      }
+    };
+
+    function renderDriversManagement() {
+      const container = document.getElementById('driversListContainer');
+      container.innerHTML = '';
+
+      if (driversList.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic">Nema unesenih vozača.</p>`;
+        return;
+      }
+
+      driversList.forEach(d => {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-medium text-slate-700";
+        div.innerHTML = `
+          <span>${d.name}</span>
+          <button onclick="deleteDriver('${d.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Ukloni">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    window.loadBookings = function() {
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref('bookings/' + activeDate).off();
+      activeDate = selectedDate;
+      editingBookingId = null;
+      driverAddingNoteId = null;
+      listenToFirebase();
+    };
+
+    window.handleCreateBooking = function(e) {
+      if (e) e.preventDefault();
+      
+      const time = document.getElementById('time').value.trim();
+      const pickup = document.getElementById('pickup').value.trim();
+      const vehicleType = document.getElementById('vehicleType').value;
+      const pax = document.getElementById('pax').value.trim();
+      const price = document.getElementById('price').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const note = document.getElementById('note').value.trim();
+      const submitBtn = document.getElementById('submitBtn');
+
+      const newBooking = {
+        time: time || '-',
+        pickup: pickup || '-',
+        vehicleType,
+        pax: pax || '0',
+        price: price || '0',
+        phone: phone || '-',
+        note,
+        driverNote: '',
+        driver: '',
+        createdAt: Date.now()
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Spremanje...";
+
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref('bookings/' + selectedDate).push(newBooking, (err) => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="plus" class="w-4 h-4"></i> Spremi Booking`;
+        if (window.lucide) lucide.createIcons();
+        if (!err) {
+          document.getElementById('bookingForm').reset();
+          closeBookingModal();
+        } else {
+          alert("Greška pri spremanju: " + err.message);
+        }
+      });
+    };
+
+    window.updateDriver = function(id, driverName) {
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref(`bookings/${selectedDate}/${id}`).update({ driver: driverName }); };  window.deleteBooking = function(id) { if (confirm('Jeste li sigurni da želite obrisati ovaj booking?')) { const selectedDate = document.getElementById('filterDate').value; db.ref(`bookings/${selectedDate}/${id}`).remove(); } };  window.startEditBooking = function(id) { editingBookingId = id; driverAddingNoteId = null; renderBookings(); };  window.cancelEdit = function() { editingBookingId = null; renderBookings(); };  window.saveEditBooking = function(e, id) { e.preventDefault(); const time = document.getElementById(`edit_time_${id}`).value.trim();
+      const pickup = document.getElementById(`edit_pickup_${id}`).value.trim(); const vehicleType = document.getElementById(`edit_vehicleType_${id}`).value;
+      const pax = document.getElementById(`edit_pax_${id}`).value.trim(); const price = document.getElementById(`edit_price_${id}`).value.trim();
+      const phone = document.getElementById(`edit_phone_${id}`).value.trim(); const note = document.getElementById(`edit_note_${id}`).value.trim();
+
+      const updatedData = {
+        time: time || '-',
+        pickup: pickup || '-',
+        vehicleType,
+        pax: pax || '0',
+        price: price || '0',
+        phone: phone || '-',
+        note
+      };
+
+      const selectedDate = document.getElementById('filterDate').value;
+      db.ref(`bookings/${selectedDate}/${id}`).update(updatedData, (err) => {
+        if (!err) {
+          editingBookingId = null;
+          renderBookings();
+        } else {
+          alert("Greška pri ažuriranju: " + err.message);
+        }
+      });
+    };
+
+    window.startDriverAddNote = function(id) {
+      driverAddingNoteId = id;
+      renderBookings();
+    };
+
+    window.cancelDriverAddNote = function() {
+      driverAddingNoteId = null;
+      renderBookings();
+    };
+
+    window.saveDriverNoteSeparate = function(e, id) {
+      e.preventDefault();
+      const driverNote = document.getElementById(`driver_note_input_${id}`).value.trim(); const selectedDate = document.getElementById('filterDate').value;  db.ref(`bookings/${selectedDate}/${id}`).update({ driverNote }, (err) => { if (!err) { driverAddingNoteId = null; renderBookings(); } else { alert("Greška pri spremanju vozačeve napomene: " + err.message); } }); };  window.exportToExcel = function() { const bookingsArray = Object.keys(bookingsData).map(key => ({ id: key, ...bookingsData[key] }));  if (bookingsArray.length === 0) { alert("Nema podataka za export na odabrani datum."); return; }  bookingsArray.sort((a, b) => (a.time \vert{}\vert{} '').localeCompare(b.time \vert{}\vert{} ''));  let csvContent = "\uFEFFVrijeme;Mjesto Pick-up;Vrsta Vozila;Broj Osoba;Cijena (€);Broj Telefona;Vozač;Admin Napomena;Vozač Napomena\r\n"; bookingsArray.forEach(b => { const row = [ b.time \vert{}\vert{} '', `"${(b.pickup || '').replace(/"/g, '""')}"`,
+          `"${(b.vehicleType \vert{}\vert{} '').replace(/"/g, '""')}"`, b.pax \vert{}\vert{} '', b.price \vert{}\vert{} '', `"${(b.phone || '').replace(/"/g, '""')}"`,
+          `"${(b.driver \vert{}\vert{} 'Nije dodijeljen').replace(/"/g, '""')}"`, `"${(b.note || '').replace(/"/g, '""')}"`,
+          `"${(b.driverNote \vert{}\vert{} '').replace(/"/g, '""')}"` ]; csvContent += row.join(";") + "\r\n"; });  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", `raspored_tura_${activeDate}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    function renderBookings() {
+      const listContainer = document.getElementById('bookingsList');
+      const countBadge = document.getElementById('bookingCount');
+      const displayTitle = document.getElementById('displayDateTitle');
+      const filterDriverSelect = document.getElementById('filterDriver');
+      const currentDriverFilter = filterDriverSelect.value;
+      const filterVehicleVal = document.getElementById('filterVehicle').value;
+
+      filterDriverSelect.innerHTML = '<option value="">Svi vozači</option>';
+      driversList.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.name;
+        opt.textContent = d.name;
+        filterDriverSelect.appendChild(opt);
+      });
+      filterDriverSelect.value = currentDriverFilter;
+      
+      const formattedDate = new Date(activeDate).toLocaleDateString('hr-HR', { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'numeric', 
+        year: 'numeric' 
+      });
+      displayTitle.textContent = `Raspored (${formattedDate})`;  let bookingsArray = Object.keys(bookingsData).map(key => ({ id: key, ...bookingsData[key] }));  if (currentDriverFilter) { bookingsArray = bookingsArray.filter(b => (b.driver \vert{}\vert{} '').trim() === currentDriverFilter); } if (filterVehicleVal) { bookingsArray = bookingsArray.filter(b => b.vehicleType === filterVehicleVal); }  bookingsArray.sort((a, b) => (a.time \vert{}\vert{} '').localeCompare(b.time \vert{}\vert{} ''));  countBadge.textContent = `${bookingsArray.length} vožnji`;
+      listContainer.innerHTML = '';
+
+      if (bookingsArray.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
+            <i data-lucide="calendar-x" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+            <p class="text-sm font-medium text-slate-500">Nema online bookinga za ove kriterije.</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      bookingsArray.forEach(b => {
+        const isBus = b.vehicleType === 'Cabrio Bus';
+        const card = document.createElement('div');
+        card.className = "p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 transition-all shadow-xs";
+
+        if (currentRole === 'admin' && editingBookingId === b.id) {
+          card.innerHTML = `
+            <form onsubmit="saveEditBooking(event, '${b.id}')" class="space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span class="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Uređivanje ture
+                </span>
+                <div class="flex items-center gap-1">
+                  <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold">Spremi</button>
+                  <button type="button" onclick="cancelEdit()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-semibold">Odustani</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Vrijeme</label>
+                  <input type="text" id="edit_time_${b.id}" maxlength="5" oninput="formatTimeInput(this)" value="${b.time || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Vozilo</label>
+                  <select id="edit_vehicleType_${b.id}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                    <option value="Cabrio Bus" ${b.vehicleType === 'Cabrio Bus' ? 'selected' : ''}>Cabrio Bus</option>
+                    <option value="Tuk Tuk" ${b.vehicleType === 'Tuk Tuk' ? 'selected' : ''}>Tuk Tuk</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Pick-up</label>
+                <input type="text" id="edit_pickup_${b.id}" value="${b.pickup || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Putnika</label>
+                  <input type="number" id="edit_pax_${b.id}" min="0" value="${b.pax || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Cijena (€)</label>
+                  <input type="number" id="edit_price_${b.id}" step="0.01" min="0" value="${b.price || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Telefon</label>
+                  <input type="tel" id="edit_phone_${b.id}" value="${b.phone || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Admin Napomena</label>
+                <textarea id="edit_note_${b.id}" rows="2" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none resize-none">${b.note || ''}</textarea>
+              </div>
+            </form>
+          `;
+          listContainer.appendChild(card);
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+
+        let driverSection = '';
+        if (currentRole === 'admin') {
+          let driverOptions = `<option value="">-- Odaberi vozača --</option>`;
+          driversList.forEach(d => {
+            const selected = (b.driver === d.name) ? 'selected' : '';
+            driverOptions += `<option value="${d.name}" ${selected}>${d.name}</option>`;
+          });
+
+          driverSection = `
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <label class="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                <i data-lucide="user-check" class="w-3.5 h-3.5 text-indigo-500"></i> Vozač:
+              </label>
+              <select onchange="updateDriver('${b.id}', this.value)"
+                      class="text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none w-48">
+                ${driverOptions}
+              </select>
+            </div>
+          `;
+        } else {
+          driverSection = `
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-medium text-slate-500">Vozač:</span>
+              <span class="text-xs font-bold ${b.driver ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} px-2.5 py-1 rounded-md">
+                ${b.driver ? b.driver : 'Nije dodijeljen'}
+              </span>
+            </div>
+          `;
+        }
+
+        let adminActions = '';
+        if (currentRole === 'admin') {
+          adminActions = `
+            <div class="flex items-center gap-1">
+              <button onclick="startEditBooking('${b.id}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded-lg transition-colors" title="Uredi">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteBooking('${b.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded-lg transition-colors" title="Obriši">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          `;
+        }
+
+        let adminNoteHtml = '';
+        if (b.note && b.note.trim() !== '') {
+          adminNoteHtml = `
+            <div class="mt-2 text-xs bg-amber-50 text-amber-800 border border-amber-200/60 p-2.5 rounded-lg flex items-start gap-1.5">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5"></i>
+              <span><strong>Admin napomena:</strong> ${b.note}</span>
+            </div>
+          `;
+        }
+
+        let driverNoteHtml = '';
+        if (currentRole === 'driver' && driverAddingNoteId === b.id) {
+          driverNoteHtml = `
+            <form onsubmit="saveDriverNoteSeparate(event, '${b.id}')" class="mt-2 bg-sky-50 border border-sky-200 p-2.5 rounded-lg space-y-2">
+              <label class="block text-[11px] font-semibold text-sky-800">Vaša napomena (Vozač):</label>
+              <textarea id="driver_note_input_${b.id}" rows="2" placeholder="Upišite zabilješku..." class="w-full bg-white border border-sky-300 text-xs rounded-lg p-2 outline-none resize-none">${b.driverNote || ''}</textarea>
+              <div class="flex justify-end gap-1">
+                <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded text-[11px] font-semibold">Spremi</button>
+                <button type="button" onclick="cancelDriverAddNote()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1 rounded text-[11px] font-semibold">Odustani</button>
+              </div>
+            </form>
+          `;
+        } else {
+          if (b.driverNote && b.driverNote.trim() !== '') {
+            let editDriverBtn = '';
+            if (currentRole === 'driver') {
+              editDriverBtn = `<button onclick="startDriverAddNote('${b.id}')" class="text-[10px] font-semibold text-sky-700 hover:underline ml-2">(Uredi)</button>`;
+            }
+            driverNoteHtml = `
+              <div class="mt-2 text-xs bg-sky-50 text-sky-900 border border-sky-200 p-2.5 rounded-lg flex items-start justify-between gap-1.5">
+                <div class="flex items-start gap-1.5">
+                  <i data-lucide="car" class="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5"></i>
+                  <span><strong>Napomena vozača:</strong> ${b.driverNote}</span>
+                </div>
+                ${editDriverBtn}
+              </div>
+            `;
+          } else {
+            if (currentRole === 'driver') {
+              driverNoteHtml = `
+                <div class="mt-2">
+                  <button onclick="startDriverAddNote('${b.id}')" class="text-xs font-medium text-sky-600 hover:text-sky-800 flex items-center gap-1">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Dodaj napomenu vozača
+                  </button>
+                </div>
+              `;
+            }
+          }
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1 border border-indigo-100">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+                ${b.time}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${isBus ? 'bg-sky-50 text-sky-700 border border-sky-100' : 'bg-purple-50 text-purple-700 border border-purple-100'}">
+                  ${isBus ? '<i data-lucide="bus" class="w-3 h-3"></i>' : '<i data-lucide="car" class="w-3 h-3"></i>'}
+                  ${b.vehicleType}
+                </span>
+                <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-100">
+                  ${b.price ? b
