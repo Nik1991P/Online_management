@@ -104,7 +104,7 @@
           </div>
         </div>
 
-        <!-- Forma za unos novog bookinga (BEZ OBAVEZNIH POLJA) -->
+        <!-- Forma za unos novog bookinga -->
         <div id="inputFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
           <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 pb-3 border-b border-slate-100">
             <i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i>
@@ -249,6 +249,10 @@
         localStorage.setItem('tour_app_role', role);
         errorEl.classList.add('hidden');
         passInput.value = '';
+        
+        // Postavi današnji datum prilikom prijave
+        activeDate = new Date().toISOString().split('T')[0];
+        
         initApp(role);
       } else {
         errorEl.classList.remove('hidden');
@@ -267,6 +271,8 @@
       currentRole = role;
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('appScreen').classList.remove('hidden');
+      
+      // Osiguraj da je polje za datum uvijek postavljeno na aktivni (današnji) datum
       document.getElementById('filterDate').value = activeDate;
 
       const badge = document.getElementById('userRoleBadge');
@@ -589,7 +595,6 @@
         const card = document.createElement('div');
         card.className = "p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 transition-all shadow-xs";
 
-        // Admin mod za uređivanje (BEZ OBAVEZNIH POLJA)
         if (currentRole === 'admin' && editingBookingId === b.id) {
           card.innerHTML = `
             <form onsubmit="saveEditBooking(event, '${b.id}')" class="space-y-3">
@@ -734,7 +739,7 @@
               driverNoteHtml = `
                 <div class="mt-2">
                   <button onclick="startDriverAddNote('${b.id}')" class="text-xs font-medium text-sky-600 hover:text-sky-800 flex items-center gap-1">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Dodaj napomenu
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Dodaj napomenu vozača
                   </button>
                 </div>
               `;
