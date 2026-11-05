@@ -15,7 +15,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-  <!-- EKRAN ZA PRIJAVU (LOGIN SCREEN) - UVIJEK VIDLJIV PRI OTVARANJU -->
+  <!-- EKRAN ZA PRIJAVU (LOGIN SCREEN) -->
   <div id="loginScreen" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 sm:p-8">
       <div class="text-center mb-6">
@@ -60,21 +60,27 @@
 
       <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
-          <input type="text" id="time" placeholder="14:30" maxlength="5" oninput="formatTimeInput(this)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Ime i prezime (Tko je bookirao)</label>
+          <input type="text" id="clientName" placeholder="Npr. Ivan Horvat" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
+            <input type="text" id="time" placeholder="14:30" maxlength="5" oninput="formatTimeInput(this)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
+            <select id="vehicleType" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="Cabrio Bus">Cabrio Bus</option>
+              <option value="Tuk Tuk">Tuk Tuk</option>
+            </select>
+          </div>
         </div>
 
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Mjesto Pick-up</label>
           <input type="text" id="pickup" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
-          <select id="vehicleType" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-            <option value="Cabrio Bus">Cabrio Bus</option>
-            <option value="Tuk Tuk">Tuk Tuk</option>
-          </select>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -145,7 +151,7 @@
     </div>
   </div>
 
-  <!-- GLAVNA APLIKACIJA (INICIJALNO SAKRIVENA) -->
+  <!-- GLAVNA APLIKACIJA -->
   <div id="appScreen" class="max-w-5xl mx-auto p-4 sm:p-6 hidden">
     <!-- Header -->
     <header class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 mb-6">
@@ -418,6 +424,7 @@
     window.handleCreateBooking = function(e) {
       if (e) e.preventDefault();
       
+      const clientName = document.getElementById('clientName').value.trim();
       const time = document.getElementById('time').value.trim();
       const pickup = document.getElementById('pickup').value.trim();
       const vehicleType = document.getElementById('vehicleType').value;
@@ -428,6 +435,7 @@
       const submitBtn = document.getElementById('submitBtn');
 
       const newBooking = {
+        clientName: clientName || 'Nepoznato',
         time: time || '-',
         pickup: pickup || '-',
         vehicleType,
@@ -482,6 +490,7 @@
 
     window.saveEditBooking = function(e, id) {
       e.preventDefault();
+      const clientName = document.getElementById(`edit_clientName_${id}`).value.trim();
       const time = document.getElementById(`edit_time_${id}`).value.trim();
       const pickup = document.getElementById(`edit_pickup_${id}`).value.trim();
       const vehicleType = document.getElementById(`edit_vehicleType_${id}`).value;
@@ -491,6 +500,7 @@
       const note = document.getElementById(`edit_note_${id}`).value.trim();
 
       const updatedData = {
+        clientName: clientName || 'Nepoznato',
         time: time || '-',
         pickup: pickup || '-',
         vehicleType,
@@ -549,9 +559,10 @@
 
       bookingsArray.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
 
-      let csvContent = "\uFEFFVrijeme;Mjesto Pick-up;Vrsta Vozila;Broj Osoba;Cijena (€);Broj Telefona;Vozač;Admin Napomena;Vozač Napomena\r\n";
+      let csvContent = "\uFEFFIme i prezime;Vrijeme;Mjesto Pick-up;Vrsta Vozila;Broj Osoba;Cijena (€);Broj Telefona;Vozač;Admin Napomena;Vozač Napomena\r\n";
       bookingsArray.forEach(b => {
         const row = [
+          `"${(b.clientName || '').replace(/"/g, '""')}"`,
           b.time || '',
           `"${(b.pickup || '').replace(/"/g, '""')}"`,
           `"${(b.vehicleType || '').replace(/"/g, '""')}"`,
@@ -644,6 +655,11 @@
                   <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold">Spremi</button>
                   <button type="button" onclick="cancelEdit()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-semibold">Odustani</button>
                 </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Ime i prezime (Booking)</label>
+                <input type="text" id="edit_clientName_${b.id}" value="${b.clientName || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
               </div>
 
               <div class="grid grid-cols-2 gap-2">
@@ -805,6 +821,13 @@
             ${adminActions}
           </div>
 
+          <div class="mt-2.5 flex items-center justify-between text-xs font-bold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/60">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
+              <span>Booking na ime: <span class="text-indigo-700">${b.clientName || 'Nije navedeno'}</span></span>
+            </div>
+          </div>
+
           <div class="mt-2 text-xs font-medium text-slate-700 flex items-center gap-1.5">
             <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500"></i>
             <span>Pick-up: <strong>${b.pickup || 'Nije navedeno'}</strong></span>
@@ -832,14 +855,9 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // GLAVNA PROVJERA: Pri pokretanju stranice UVIJEK brišemo memoriju i tražimo login!
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons();
-      
-      // Uklanjamo staru ulogu iz memorije da se aplikacija ne bi automatski prijavljivala
       localStorage.removeItem('tour_app_role');
-      
-      // Osiguravamo da je login ekran vidljiv, a aplikacija sakrivena
       document.getElementById('loginScreen').classList.remove('hidden');
       document.getElementById('appScreen').classList.add('hidden');
     });
