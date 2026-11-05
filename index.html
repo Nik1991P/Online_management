@@ -45,6 +45,69 @@
     </div>
   </div>
 
+  <!-- MODAL ZA UNOS NOVOG BOOKINGA (Samo za Admina) -->
+  <div id="bookingModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i>
+          Novi Booking
+        </h2>
+        <button onclick="closeBookingModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
+          <input type="text" id="time" placeholder="14:30" maxlength="5" oninput="formatTimeInput(this)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Mjesto Pick-up</label>
+          <input type="text" id="pickup" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
+          <select id="vehicleType" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="Cabrio Bus">Cabrio Bus</option>
+            <option value="Tuk Tuk">Tuk Tuk</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Broj osoba</label>
+            <input type="number" id="pax" min="0" max="100" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Cijena (€)</label>
+            <input type="number" id="price" step="0.01" min="0" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Broj telefona</label>
+          <input type="tel" id="phone" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Napomena (opcionalno)</label>
+          <textarea id="note" rows="2" placeholder="Unesite napomenu ako postoji..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeBookingModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all">Odustani</button>
+          <button type="submit" id="submitBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl text-xs shadow-sm transition-all flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-4 h-4"></i> Spremi Booking
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- GLAVNA APLIKACIJA -->
   <div id="appScreen" class="max-w-6xl mx-auto p-4 sm:p-6 hidden">
     <!-- Header -->
@@ -72,10 +135,10 @@
       </div>
     </header>
 
-    <!-- Glavni Sadržaj -->
+    <!-- Glavni Sadržaj (Sada je pregled tura dominantan preko cijelog ekrana, a vozači i datum lijevo/gore) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
-      <!-- Lijeve Kontrole (Forma + Odabir Datuma + Upravljanje vozačima) -->
+      <!-- Lijeve Kontrole (Odabir Datuma + Upravljanje vozačima) -->
       <div id="leftColumn" class="lg:col-span-4 space-y-6">
         
         <!-- Filter po datumu -->
@@ -104,87 +167,43 @@
           </div>
         </div>
 
-        <!-- Forma za unos novog bookinga -->
-        <div id="inputFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-          <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 pb-3 border-b border-slate-100">
-            <i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i>
-            Novi Booking
-          </h2>
-          <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
-              <input type="text" id="time" placeholder="14:30" maxlength="5" oninput="formatTimeInput(this)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Mjesto Pick-up</label>
-              <input type="text" id="pickup" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
-              <select id="vehicleType" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-                <option value="Cabrio Bus">Cabrio Bus</option>
-                <option value="Tuk Tuk">Tuk Tuk</option>
-              </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Broj osoba</label>
-                <input type="number" id="pax" min="0" max="100" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Cijena (€)</label>
-                <input type="number" id="price" step="0.01" min="0" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Broj telefona</label>
-              <input type="tel" id="phone" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Napomena (opcionalno)</label>
-              <textarea id="note" rows="2" placeholder="Unesite napomenu ako postoji..." class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
-            </div>
-
-            <button type="submit" id="submitBtn" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
-              <i data-lucide="plus" class="w-5 h-5"></i>
-              Spremi Booking
-            </button>
-          </form>
-        </div>
-
       </div>
 
-      <!-- Desna Lista Bookinga -->
+      <!-- Desna Glavna Lista Bookinga -->
       <div id="rightColumn" class="lg:col-span-8 space-y-4">
         
-        <!-- Dodatni Filteri i Excel Export -->
+        <!-- Dodatni Filteri, Gumb za Novi Booking i Excel Export -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="flex items-center gap-2 w-full sm:w-auto">
-            <select id="filterDriver" onchange="renderBookings()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-40">
+            <select id="filterDriver" onchange="renderBookings()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-36">
               <option value="">Svi vozači</option>
             </select>
-            <select id="filterVehicle" onchange="renderBookings()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-40">
+            <select id="filterVehicle" onchange="renderBookings()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-36">
               <option value="">Sva vozila</option>
               <option value="Cabrio Bus">Cabrio Bus</option>
               <option value="Tuk Tuk">Tuk Tuk</option>
             </select>
           </div>
-          <button onclick="exportToExcel()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-            Export u Excel
-          </button>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <!-- Gumb za otvaranje forme za novi booking (Samo za admina) -->
+            <button id="openBookingModalBtn" onclick="openBookingModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              Novi Booking
+            </button>
+
+            <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              Excel
+            </button>
+          </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
             <div>
               <h2 id="displayDateTitle" class="text-lg font-bold text-slate-900">Raspored Tura</h2>
-              <p class="text-xs text-slate-500">Bookinzi sortirani kronološki po vremenu</p>
+              <p class="text-xs text-slate-500">Booking sortirani kronološki po vremenu</p>
             </div>
             
             <span id="bookingCount" class="self-start sm:self-auto bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-full border border-indigo-100">
@@ -238,6 +257,16 @@
       }
     };
 
+    // Kontrola modala za unos novog bookinga
+    window.openBookingModal = function() {
+      document.getElementById('bookingModal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    };
+
+    window.closeBookingModal = function() {
+      document.getElementById('bookingModal').classList.add('hidden');
+    };
+
     window.handleLogin = function(e) {
       if (e) e.preventDefault();
       const passInput = document.getElementById('loginPassword');
@@ -249,10 +278,7 @@
         localStorage.setItem('tour_app_role', role);
         errorEl.classList.add('hidden');
         passInput.value = '';
-        
-        // Postavi današnji datum prilikom prijave
         activeDate = new Date().toISOString().split('T')[0];
-        
         initApp(role);
       } else {
         errorEl.classList.remove('hidden');
@@ -271,12 +297,10 @@
       currentRole = role;
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('appScreen').classList.remove('hidden');
-      
-      // Osiguraj da je polje za datum uvijek postavljeno na aktivni (današnji) datum
       document.getElementById('filterDate').value = activeDate;
 
       const badge = document.getElementById('userRoleBadge');
-      const inputFormCard = document.getElementById('inputFormCard');
+      const openModalBtn = document.getElementById('openBookingModalBtn');
       const driversManagementCard = document.getElementById('driversManagementCard');
       const leftCol = document.getElementById('leftColumn');
       const rightCol = document.getElementById('rightColumn');
@@ -284,14 +308,14 @@
       if (role === 'admin') {
         badge.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Admin`;
         badge.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 flex items-center gap-1.5";
-        inputFormCard.classList.remove('hidden');
+        openModalBtn.classList.remove('hidden');
         driversManagementCard.classList.remove('hidden');
         leftCol.className = "lg:col-span-4 space-y-6";
         rightCol.className = "lg:col-span-8";
       } else {
         badge.innerHTML = `<i data-lucide="user" class="w-4 h-4 text-indigo-600"></i> Vozač`;
         badge.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1.5";
-        inputFormCard.classList.add('hidden');
+        openModalBtn.classList.add('hidden');
         driversManagementCard.classList.add('hidden');
         leftCol.className = "lg:col-span-3 space-y-6";
         rightCol.className = "lg:col-span-9";
@@ -409,10 +433,11 @@
       const selectedDate = document.getElementById('filterDate').value;
       db.ref('bookings/' + selectedDate).push(newBooking, (err) => {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i data-lucide="plus" class="w-5 h-5"></i> Spremi Booking`;
+        submitBtn.innerHTML = `<i data-lucide="plus" class="w-4 h-4"></i> Spremi Booking`;
         if (window.lucide) lucide.createIcons();
         if (!err) {
           document.getElementById('bookingForm').reset();
+          closeBookingModal();
         } else {
           alert("Greška pri spremanju: " + err.message);
         }
