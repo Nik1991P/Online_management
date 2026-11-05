@@ -104,7 +104,7 @@
           </div>
         </div>
 
-        <!-- Forma za unos novog bookinga -->
+        <!-- Forma za unos novog bookinga (BEZ OBAVEZNIH POLJA) -->
         <div id="inputFormCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
           <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 pb-3 border-b border-slate-100">
             <i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i>
@@ -113,17 +113,17 @@
           <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Vrijeme tura</label>
-              <input type="text" id="time" required placeholder="14:30" maxlength="5" oninput="formatTimeInput(this)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <input type="text" id="time" placeholder="14:30" maxlength="5" oninput="formatTimeInput(this)" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Mjesto Pick-up</label>
-              <input type="text" id="pickup" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <input type="text" id="pickup" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Vrsta Vozila</label>
-              <select id="vehicleType" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <select id="vehicleType" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
                 <option value="Cabrio Bus">Cabrio Bus</option>
                 <option value="Tuk Tuk">Tuk Tuk</option>
               </select>
@@ -132,17 +132,17 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Broj osoba</label>
-                <input type="number" id="pax" min="1" max="100" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="number" id="pax" min="0" max="100" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Cijena (€)</label>
-                <input type="number" id="price" step="0.01" min="0" required placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="number" id="price" step="0.01" min="0" placeholder="0.00" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
               </div>
             </div>
 
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Broj telefona</label>
-              <input type="tel" id="phone" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <input type="tel" id="phone" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
             </div>
 
             <div>
@@ -375,22 +375,22 @@
     window.handleCreateBooking = function(e) {
       if (e) e.preventDefault();
       
-      const time = document.getElementById('time').value;
-      const pickup = document.getElementById('pickup').value;
+      const time = document.getElementById('time').value.trim();
+      const pickup = document.getElementById('pickup').value.trim();
       const vehicleType = document.getElementById('vehicleType').value;
-      const pax = document.getElementById('pax').value;
-      const price = document.getElementById('price').value;
-      const phone = document.getElementById('phone').value;
+      const pax = document.getElementById('pax').value.trim();
+      const price = document.getElementById('price').value.trim();
+      const phone = document.getElementById('phone').value.trim();
       const note = document.getElementById('note').value.trim();
       const submitBtn = document.getElementById('submitBtn');
 
       const newBooking = {
-        time,
-        pickup,
+        time: time || '-',
+        pickup: pickup || '-',
         vehicleType,
-        pax,
-        price,
-        phone,
+        pax: pax || '0',
+        price: price || '0',
+        phone: phone || '-',
         note,
         driverNote: '',
         driver: '',
@@ -438,21 +438,21 @@
 
     window.saveEditBooking = function(e, id) {
       e.preventDefault();
-      const time = document.getElementById(`edit_time_${id}`).value;
-      const pickup = document.getElementById(`edit_pickup_${id}`).value;
+      const time = document.getElementById(`edit_time_${id}`).value.trim();
+      const pickup = document.getElementById(`edit_pickup_${id}`).value.trim();
       const vehicleType = document.getElementById(`edit_vehicleType_${id}`).value;
-      const pax = document.getElementById(`edit_pax_${id}`).value;
-      const price = document.getElementById(`edit_price_${id}`).value;
-      const phone = document.getElementById(`edit_phone_${id}`).value;
+      const pax = document.getElementById(`edit_pax_${id}`).value.trim();
+      const price = document.getElementById(`edit_price_${id}`).value.trim();
+      const phone = document.getElementById(`edit_phone_${id}`).value.trim();
       const note = document.getElementById(`edit_note_${id}`).value.trim();
 
       const updatedData = {
-        time,
-        pickup,
+        time: time || '-',
+        pickup: pickup || '-',
         vehicleType,
-        pax,
-        price,
-        phone,
+        pax: pax || '0',
+        price: price || '0',
+        phone: phone || '-',
         note
       };
 
@@ -467,7 +467,6 @@
       });
     };
 
-    // Spremanje vozačeve odvojene napomene
     window.startDriverAddNote = function(id) {
       driverAddingNoteId = id;
       renderBookings();
@@ -590,7 +589,7 @@
         const card = document.createElement('div');
         card.className = "p-4 rounded-xl border border-slate-200/90 bg-white hover:border-slate-300 transition-all shadow-xs";
 
-        // Admin mod za potpuno uređivanje ture
+        // Admin mod za uređivanje (BEZ OBAVEZNIH POLJA)
         if (currentRole === 'admin' && editingBookingId === b.id) {
           card.innerHTML = `
             <form onsubmit="saveEditBooking(event, '${b.id}')" class="space-y-3">
@@ -607,7 +606,7 @@
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Vrijeme</label>
-                  <input type="text" id="edit_time_${b.id}" required maxlength="5" oninput="formatTimeInput(this)" value="${b.time || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                  <input type="text" id="edit_time_${b.id}" maxlength="5" oninput="formatTimeInput(this)" value="${b.time || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
                 </div>
                 <div>
                   <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Vozilo</label>
@@ -620,21 +619,21 @@
 
               <div>
                 <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Pick-up</label>
-                <input type="text" id="edit_pickup_${b.id}" required value="${b.pickup || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                <input type="text" id="edit_pickup_${b.id}" value="${b.pickup || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
               </div>
 
               <div class="grid grid-cols-3 gap-2">
                 <div>
                   <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Putnika</label>
-                  <input type="number" id="edit_pax_${b.id}" min="1" required value="${b.pax || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                  <input type="number" id="edit_pax_${b.id}" min="0" value="${b.pax || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
                 </div>
                 <div>
                   <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Cijena (€)</label>
-                  <input type="number" id="edit_price_${b.id}" step="0.01" min="0" required value="${b.price || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                  <input type="number" id="edit_price_${b.id}" step="0.01" min="0" value="${b.price || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
                 </div>
                 <div>
                   <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Telefon</label>
-                  <input type="tel" id="edit_phone_${b.id}" required value="${b.phone || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
+                  <input type="tel" id="edit_phone_${b.id}" value="${b.phone || ''}" class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg p-2 outline-none">
                 </div>
               </div>
 
@@ -693,7 +692,6 @@
           `;
         }
 
-        // Prikaz Admin napomene
         let adminNoteHtml = '';
         if (b.note && b.note.trim() !== '') {
           adminNoteHtml = `
@@ -704,7 +702,6 @@
           `;
         }
 
-        // Prikaz Vozačeve napomene i gumb za unos/uređivanje
         let driverNoteHtml = '';
         if (currentRole === 'driver' && driverAddingNoteId === b.id) {
           driverNoteHtml = `
